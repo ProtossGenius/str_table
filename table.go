@@ -3,9 +3,9 @@ package str_table
 import (
 	"fmt"
 	"strings"
+
 	"github.com/mattn/go-runewidth"
 )
-
 
 type TableRow []string
 type TableCols []TableColumnItf
@@ -18,7 +18,7 @@ type TableItf interface {
 	RowAt(line int) (TableRow, error)
 	Set(colNo, row int, val string) error
 	SetByName(colName string, row int, val string) error
-	Column(colNo int)(TableColumnItf, error)
+	Column(colNo int) (TableColumnItf, error)
 	ColumnByName(colName string) (TableColumnItf, error)
 	AddRow(row TableRow)
 }
@@ -35,7 +35,7 @@ type TableColumnItf interface {
 }
 
 func inSize(pos, size int) bool {
-	return  pos >= 0 && pos < size
+	return pos >= 0 && pos < size
 }
 
 type TableColumn struct {
@@ -46,7 +46,7 @@ type TableColumn struct {
 }
 
 func NewTableColumn(name string, table TableItf) TableColumnItf {
-	return &TableColumn{name:name, table:table}
+	return &TableColumn{name: name, table: table}
 }
 
 func (this *TableColumn) checkString(str string) {
@@ -67,7 +67,7 @@ func (this *TableColumn) ColumnAt(pos int) string {
 	return ""
 }
 
-func (this *TableColumn) SetTableItf(itf TableItf){
+func (this *TableColumn) SetTableItf(itf TableItf) {
 	this.table = itf
 }
 
@@ -89,7 +89,8 @@ func (this *TableColumn) SetColumnList(list []string) error {
 }
 
 func (this *TableColumn) SetColumnAt(pos int, val string) error {
-	if pos < 0 || pos >= this.Len() {
+	if inSize(pos, this.Len()) {
+		this.checkString(val)
 		this.columnList[pos] = val
 		return nil
 	}
@@ -117,9 +118,9 @@ type table_ struct {
 }
 
 func NewTable(name string, colNames []string) TableItf {
-	t := &table_{name:name, columnNames:colNames}
+	t := &table_{name: name, columnNames: colNames}
 	t.kMap = map[string]int{}
-	for i, cn := range colNames{
+	for i, cn := range colNames {
 		t.kMap[cn] = i
 		t.cols = append(t.cols, NewTableColumn(cn, t))
 	}
@@ -156,18 +157,17 @@ func (this *table_) RowAt(line int) (TableRow, error) {
 	return row, nil
 }
 
-
 func (this *table_) Set(col, row int, val string) error {
-	c , err := this.Column(col)
-	if err != nil{
+	c, err := this.Column(col)
+	if err != nil {
 		return err
 	}
 	return c.SetColumnAt(row, val)
 }
 
 func (this *table_) SetByName(colName string, row int, val string) error {
-	col , err := this.ColumnByName(colName)
-	if err != nil{
+	col, err := this.ColumnByName(colName)
+	if err != nil {
 		return err
 	}
 	return col.SetColumnAt(row, val)
@@ -182,7 +182,7 @@ func (this *table_) ColumnByName(colName string) (TableColumnItf, error) {
 	return this.cols[id], nil
 }
 func (this *table_) Column(col int) (TableColumnItf, error) {
-	if !inSize(col ,this.Cols()){
+	if !inSize(col, this.Cols()) {
 		return nil, fmt.Errorf(ErrUndefinedPos, this.Name(), this.Rows(), col)
 	}
 	return this.cols[col], nil
@@ -191,9 +191,9 @@ func (this *table_) AddRow(row TableRow) {
 	pos := this.rows
 	rowLen := len(row)
 	this.rows++
-	for i := range this.cols{
+	for i := range this.cols {
 		v := ""
-		if i < rowLen{
+		if i < rowLen {
 			v = row[i]
 		}
 		this.cols[i].SetColumnAt(pos, v)

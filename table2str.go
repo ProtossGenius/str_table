@@ -1,9 +1,10 @@
 package str_table
 
 import (
-	"github.com/mattn/go-runewidth"
 	"fmt"
 	"strings"
+
+	"github.com/mattn/go-runewidth"
 )
 
 type TableComp struct {
@@ -71,7 +72,7 @@ const (
 	TableLineType_LAST_LINE
 )
 
-func GetTableDrawComp(tableComp *TableComp) (*TableDrawComp) {
+func GetTableDrawComp(tableComp *TableComp) *TableDrawComp {
 	return &TableDrawComp{&TableLinePoint{tableComp.TablePoint2LeftUp, tableComp.TablePoint3Up, tableComp.TablePoint2RightUp},
 		&TableLinePoint{tableComp.TablePoint3Left, tableComp.TablePoint4, tableComp.TablePoint3Right},
 		&TableLinePoint{tableComp.TablePoint2LeftDown, tableComp.TablePoint3Down, tableComp.TablePoint2RightDown}}
@@ -119,4 +120,21 @@ func TableLineStrU(tdc *TableDrawComp, tc *TableComp, t TableLineType, widthList
 		res += f
 	}
 	return res + tlp.LastPoint, nil
+}
+
+func TableToString(t TableItf) (string, error) {
+	lines := []string{}
+	widthList := t.ColWidthList()
+	for i := range widthList {
+		if widthList[i]&1 != 0 {
+			widthList[i]++
+		}
+	}
+	fmt.Println(widthList)
+	tmp, err := TableLineStr(TableLineType_FIRST_LINE, widthList)
+	if err != nil {
+		return "", err
+	}
+	lines = append(lines, tmp)
+	return strings.Join(lines, "\n"), nil
 }
