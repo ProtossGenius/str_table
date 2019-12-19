@@ -122,7 +122,17 @@ func TableLineStrU(tdc *TableDrawComp, tc *TableComp, t TableLineType, widthList
 	return res + tlp.LastPoint, nil
 }
 
-func TableToString(t TableItf) (string, error) {
+type TableTextFillFunc func(widthList []int, rows TableRow) string
+
+func TTFFLeft(widthList []int, rows TableRow) string { //左对齐
+	for i, r := range rows {
+		f, _:= fill(" ", widthList[i]-runewidth.StringWidth(r))
+		rows[i] =  r + f
+	}
+	return defaultTableComp.TableLineVer + strings.Join(rows, defaultTableComp.TableLineVer) + defaultTableComp.TableLineVer
+}
+
+func TableToStrByFunc(t TableItf, f TableTextFillFunc) (string, error) {
 	lines := []string{}
 	widthList := t.ColWidthList()
 	for i := range widthList {
@@ -136,5 +146,24 @@ func TableToString(t TableItf) (string, error) {
 		return "", err
 	}
 	lines = append(lines, tmp)
+	r := t.FieldNames()
+	rows := []TableRow{r}
+	rows = append(rows, t.AllRow()...)
+	for i, row := range rows {
+		if i != 0 {
+			line, _ := TableLineStr(TableLineType_MID_LINE, widthList)
+			lines = append(lines, line)
+		}
+		lines = append(lines, f(widthList, row))
+	}
+	tmp, err = TableLineStr(TableLineType_LAST_LINE, widthList)
+	if err != nil {
+		return "", err
+	}
+	lines = append(lines, tmp)
 	return strings.Join(lines, "\n"), nil
+}
+
+func TableToString(t TableItf) (string, error) {
+	return TableToStrByFunc(t, TTFFLeft)
 }

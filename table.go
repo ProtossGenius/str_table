@@ -16,7 +16,9 @@ type TableItf interface {
 	Cols() int
 	ColWidthList() []int
 	RowAt(line int) (TableRow, error)
+	AllRow() []TableRow
 	Set(colNo, row int, val string) error
+	FieldNames() TableRow
 	SetByName(colName string, row int, val string) error
 	Column(colNo int) (TableColumnItf, error)
 	ColumnByName(colName string) (TableColumnItf, error)
@@ -46,7 +48,9 @@ type TableColumn struct {
 }
 
 func NewTableColumn(name string, table TableItf) TableColumnItf {
-	return &TableColumn{name: name, table: table}
+	t :=  &TableColumn{table: table}
+	t.SetName(name)
+	return t
 }
 
 func (this *TableColumn) checkString(str string) {
@@ -61,7 +65,7 @@ func (this *TableColumn) Name() string {
 }
 
 func (this *TableColumn) ColumnAt(pos int) string {
-	if pos < 0 || pos >= this.Len() {
+	if inSize(pos, this.Len()) {
 		return this.columnList[pos]
 	}
 	return ""
@@ -146,6 +150,21 @@ func (this *table_) Cols() int {
 	return len(this.cols)
 }
 
+func (this *table_) AllRow() []TableRow{
+	allRow := []TableRow{}
+	for i := 0; i < this.Rows();i++{
+		r, _ := this.RowAt(i)
+		allRow = append(allRow, r)
+	}
+	return allRow
+}
+func (this *table_) FieldNames() TableRow{
+	row := make([]string, 0, this.Cols())
+	for _, col := range this.cols{
+		row = append(row, col.Name())
+	}
+	return row
+}
 func (this *table_) RowAt(line int) (TableRow, error) {
 	if !inSize(line, this.Rows()) {
 		return nil, fmt.Errorf(ErrUndefinedPos, this.Name(), this.Rows(), line)
